@@ -1,0 +1,847 @@
+# Derecho IA – Product Requirements Document
+## RAG Engine, LLM Engine & Legal AI Agent
+
+**Project:** Repositorio Jurídico Normativo del Perú  
+**Product:** Derecho IA  
+**Version:** 1.0  
+**Status:** Proposed  
+**Priority:** High  
+**Jurisdiction:** Peru (initial release)  
+**Implementation language:** Python 3.12+  
+**Documentation language:** English
+
+---
+
+# 1. PRODUCT CONTEXT
+
+## 1.1 Objective
+
+Develop the three core intelligence components required to transform the Derecho IA normative repository into an AI-powered legal research and analysis platform.
+
+The components are:
+
+1. RAG Engine – Legal knowledge retrieval and context construction.
+2. LLM Engine – Provider-independent Large Language Model integration.
+3. Legal AI Agent – Intelligent orchestration of legal research, analysis, verification and response generation.
+
+These components must operate independently while exposing standardized interfaces.
+
+## 1.2 Existing Infrastructure
+
+The following components are assumed to exist or be developed in preceding project stages:
+
+- Original legal documents repository.
+- Document extraction and OCR pipeline.
+- Markdown normalized documents.
+- Structured legal JSON.
+- Document metadata and identifiers.
+- PostgreSQL database.
+- Full-text search infrastructure.
+- Vector search infrastructure using pgvector.
+- STAIR hierarchical legal retrieval engine.
+
+The new components must reuse existing infrastructure rather than duplicate document processing or legal knowledge storage.
+
+## 1.3 Architectural Principles
+
+- Provider-independent AI architecture.
+- Retrieval-grounded legal responses.
+- Verifiable citations.
+- Traceability to original documents.
+- Separation between knowledge storage and AI reasoning.
+- Modular implementation.
+- Multi-company SaaS readiness.
+- Private deployment compatibility.
+- Human-in-the-loop validation.
+- Security and auditability.
+
+---
+
+# 2. PRD – ITEM 4: RAG ENGINE
+
+## 2.1 Purpose
+
+Develop a Retrieval-Augmented Generation engine capable of retrieving relevant legal information from the Derecho IA repository and preparing a structured, traceable context for LLM consumption.
+
+RAG must combine semantic and lexical search with the hierarchical retrieval capabilities provided by STAIR.
+
+## 2.2 Functional Requirements
+
+### RAG-001: Query Processing
+
+The engine must receive natural-language queries and identify:
+
+- Main legal topic.
+- Relevant legal concepts.
+- Legal entities and references.
+- Explicit law or regulation identifiers.
+- Relevant dates.
+- Jurisdiction.
+- Requested analysis type.
+
+The query processor must preserve the original user question.
+
+### RAG-002: Hybrid Retrieval
+
+Implement combined retrieval using:
+
+- PostgreSQL Full Text Search.
+- Vector similarity search through pgvector.
+- Metadata filtering.
+- Exact legal reference lookup.
+- STAIR retrieval results.
+
+The retrieval engine must support configurable weighting and ranking.
+
+### RAG-003: Hierarchical Context Retrieval
+
+Use STAIR to retrieve the relevant legal hierarchy.
+
+For example:
+
+- Norm.
+- Book.
+- Title.
+- Chapter.
+- Section.
+- Article.
+- Paragraph.
+- Numeral.
+- Subparagraph.
+
+When an article is retrieved, the engine should optionally retrieve its parent context and related legal provisions.
+
+### RAG-004: Legal Relationship Expansion
+
+Retrieve related information when relevant:
+
+- Amending legislation.
+- Repealing legislation.
+- Implementing regulations.
+- Related articles.
+- Cross-referenced provisions.
+- Relevant jurisprudence.
+- Related administrative decisions.
+
+The system must distinguish direct legal references from inferred semantic relationships.
+
+### RAG-005: Relevance Ranking
+
+Implement a configurable ranking mechanism considering:
+
+- Lexical relevance.
+- Semantic similarity.
+- Legal hierarchy.
+- Document type.
+- Legal relevance.
+- Date and validity.
+- Source authority.
+- Explicit references.
+
+The ranking algorithm must be measurable and adjustable.
+
+### RAG-006: Legal Validity Filtering
+
+Support temporal retrieval.
+
+The engine must distinguish:
+
+- Current provisions.
+- Amended provisions.
+- Repealed provisions.
+- Historical provisions.
+- Unknown or unverified validity.
+
+The system must not assume that the latest indexed document is necessarily the legally valid version.
+
+### RAG-007: Context Assembly
+
+Construct a structured context containing:
+
+- Source document identifier.
+- Document title.
+- Legal article identifier.
+- Article content.
+- Hierarchical location.
+- Relevant metadata.
+- Original page reference.
+- Validity information.
+- Retrieval score.
+- Source relationships.
+
+Context must be optimized for LLM token limits without removing essential legal references.
+
+### RAG-008: Source Traceability
+
+Every retrieved legal unit must preserve its connection to the original document.
+
+The engine must provide sufficient information to locate the exact source and, where available, the corresponding page and article.
+
+### RAG-009: Retrieval Evaluation
+
+Implement an evaluation framework using predefined legal queries.
+
+Measure:
+
+- Recall@K.
+- Precision@K.
+- Mean Reciprocal Rank.
+- Normalized Discounted Cumulative Gain.
+- Retrieval coverage.
+- Citation traceability.
+
+### RAG-010: API
+
+Expose standardized functions:
+
+- `retrieve_legal_context()`
+- `search_legal_documents()`
+- `search_legal_articles()`
+- `retrieve_related_provisions()`
+- `retrieve_legal_history()`
+- `get_retrieval_sources()`
+
+## 2.3 Non-Functional Requirements
+
+- Modular architecture.
+- Configurable retrieval parameters.
+- No dependency on a specific LLM.
+- Support concurrent requests.
+- Structured logging.
+- Retrieval performance monitoring.
+- Reproducible retrieval results.
+- Tenant-aware access control.
+
+## 2.4 Acceptance Criteria
+
+The RAG Engine is accepted when:
+
+1. It can retrieve relevant legal articles using natural-language queries.
+2. It combines lexical, semantic and hierarchical retrieval.
+3. It can retrieve related legal provisions.
+4. It preserves original document references.
+5. It distinguishes current and historical legal provisions when reliable metadata exists.
+6. It returns structured context suitable for LLM consumption.
+7. It passes a predefined legal retrieval evaluation dataset.
+
+---
+
+# 3. PRD – ITEM 5: LLM ENGINE
+
+## 3.1 Purpose
+
+Develop a centralized and provider-independent AI model integration layer.
+
+The LLM Engine must allow Derecho IA to communicate with different commercial and local language models without changing the RAG Engine or Legal AI Agent architecture.
+
+## 3.2 Supported Providers
+
+Initial providers:
+
+- OpenAI API.
+- Anthropic API.
+- Google Gemini API.
+- Ollama local models.
+
+The architecture must allow additional providers through independent adapters.
+
+## 3.3 Functional Requirements
+
+### LLM-001: Provider Abstraction
+
+Implement a standardized interface for all model providers.
+
+Required operations:
+
+- Generate text.
+- Generate structured output.
+- Stream responses.
+- Execute tool calls.
+- Retrieve token usage.
+- Handle provider errors.
+
+### LLM-002: Model Configuration
+
+Allow configuration of:
+
+- Provider.
+- Model identifier.
+- API endpoint.
+- API credentials.
+- Temperature.
+- Maximum output tokens.
+- Timeout.
+- Retry policy.
+- Supported capabilities.
+
+### LLM-003: Model Selection
+
+Support configurable model selection according to task requirements.
+
+Examples:
+
+- Query classification.
+- Legal document analysis.
+- Legal reasoning.
+- Summarization.
+- Citation verification.
+- Structured data extraction.
+
+The system must not assume that every model supports every capability.
+
+### LLM-004: BYOK
+
+Implement Bring Your Own Key functionality.
+
+Each organization must be able to configure its own AI provider credentials.
+
+Requirements:
+
+- Organization-level credentials.
+- Encrypted credential storage.
+- Credential isolation.
+- Credential validation.
+- Key rotation.
+- Usage tracking.
+- Configurable model permissions.
+
+The platform must never expose credentials to end users or other organizations.
+
+### LLM-005: Token and Cost Management
+
+Track:
+
+- Organization.
+- User.
+- Provider.
+- Model.
+- Request identifier.
+- Input tokens.
+- Output tokens.
+- Estimated cost.
+- Execution duration.
+- Timestamp.
+
+Support configurable consumption limits and usage reporting.
+
+### LLM-006: Prompt Management
+
+Implement centralized prompt management.
+
+Prompts must support:
+
+- Versioning.
+- Task-specific templates.
+- System instructions.
+- Context injection.
+- Structured output requirements.
+- Language configuration.
+- Legal safety instructions.
+
+Prompt versions must be traceable to generated responses.
+
+### LLM-007: Structured Output
+
+Support validated JSON outputs using schemas.
+
+Invalid outputs must be handled through controlled validation and retry mechanisms.
+
+### LLM-008: Streaming
+
+Support streaming responses for interactive applications.
+
+### LLM-009: Error Handling
+
+Implement:
+
+- Timeout handling.
+- Retry policies.
+- Rate-limit management.
+- Provider availability checks.
+- Circuit breaker mechanisms.
+- Optional fallback providers.
+
+Fallback must respect organization configuration and credential permissions.
+
+### LLM-010: Model Evaluation
+
+Implement a testing framework to compare models based on:
+
+- Legal answer quality.
+- Citation accuracy.
+- Instruction compliance.
+- Latency.
+- Token consumption.
+- Cost.
+
+## 3.4 Non-Functional Requirements
+
+- Provider independence.
+- Secure credential management.
+- No hardcoded API keys.
+- Configurable model policies.
+- Structured audit logs.
+- Tenant isolation.
+- Asynchronous execution support.
+- Docker deployment compatibility.
+
+## 3.5 Acceptance Criteria
+
+The LLM Engine is accepted when:
+
+1. At least two providers can be integrated through the same interface.
+2. Providers can be switched without modifying the RAG Engine.
+3. Organization-specific credentials work independently.
+4. Token consumption is recorded.
+5. Structured output is validated.
+6. Tool calling is supported where the provider permits it.
+7. Provider failures are handled without crashing the application.
+
+---
+
+# 4. PRD – ITEM 6: LEGAL AI AGENT
+
+## 4.1 Purpose
+
+Develop the core Derecho IA intelligent agent.
+
+The agent must interpret legal questions, plan research activities, invoke available tools, consume RAG context, interact with the LLM Engine and generate traceable legal responses.
+
+The agent is an orchestration layer, not simply a chatbot connected to an LLM.
+
+## 4.2 Agent Architecture
+
+Implement an initial single-agent architecture with modular tools.
+
+The architecture must support future multi-agent capabilities without requiring a complete redesign.
+
+Main components:
+
+1. Query Understanding.
+2. Task Planning.
+3. Tool Selection.
+4. Tool Execution.
+5. Context Evaluation.
+6. Legal Analysis.
+7. Citation Verification.
+8. Response Generation.
+
+## 4.3 Functional Requirements
+
+### AGENT-001: Query Understanding
+
+The agent must interpret user questions and identify:
+
+- Legal subject.
+- Requested task.
+- Relevant jurisdiction.
+- Relevant dates.
+- Required legal sources.
+- Expected response format.
+- Need for additional clarification.
+
+### AGENT-002: Task Classification
+
+Support initial task categories:
+
+- Legal research.
+- Normative interpretation.
+- Legal article lookup.
+- Jurisprudence research.
+- Legal comparison.
+- Legal validity analysis.
+- Legal summarization.
+- Legal report generation.
+
+### AGENT-003: Planning
+
+The agent must create an execution plan before performing complex research.
+
+Example:
+
+User question:
+
+"Can a company terminate an employment relationship under these circumstances?"
+
+Possible execution plan:
+
+1. Identify the relevant employment-law concepts.
+2. Search applicable legislation.
+3. Retrieve relevant articles.
+4. Search applicable jurisprudence.
+5. Check legal validity.
+6. Compare the retrieved sources.
+7. Generate a structured analysis.
+8. Verify citations.
+9. Return the response.
+
+### AGENT-004: Tool Registry
+
+Implement a standardized tool registry.
+
+Initial tools:
+
+- `search_legislation`
+- `search_case_law`
+- `search_legal_documents`
+- `get_legal_article`
+- `get_document_hierarchy`
+- `check_legal_validity`
+- `find_related_provisions`
+- `compare_legal_provisions`
+- `retrieve_legal_history`
+- `verify_citation`
+
+Each tool must define:
+
+- Name.
+- Description.
+- Input schema.
+- Output schema.
+- Permissions.
+- Execution limits.
+- Error handling.
+
+### AGENT-005: Tool Execution
+
+The agent must:
+
+- Select appropriate tools.
+- Validate tool arguments.
+- Execute authorized operations.
+- Evaluate returned information.
+- Decide whether additional retrieval is required.
+- Prevent uncontrolled execution loops.
+
+All tool execution must be logged.
+
+### AGENT-006: Legal Reasoning
+
+The agent must generate analysis based on retrieved legal sources.
+
+It must distinguish:
+
+- Explicit legal provisions.
+- Jurisprudential interpretations.
+- Doctrinal opinions.
+- Reasoned inferences.
+- Unverified assumptions.
+
+The agent must not present inferred conclusions as explicit statutory provisions.
+
+### AGENT-007: Citation Verification
+
+Before returning a legal response, verify that:
+
+- Every legal citation refers to an identifiable source.
+- The cited article exists.
+- The quoted text matches the source.
+- Page and article references are traceable.
+- Validity information is supported by available evidence.
+
+Unsupported citations must be removed, corrected or explicitly marked as unverified.
+
+### AGENT-008: Response Generation
+
+Responses should support a standardized legal structure:
+
+1. Executive summary.
+2. Legal question.
+3. Applicable legal framework.
+4. Legal analysis.
+5. Relevant jurisprudence.
+6. Conclusions.
+7. Sources and citations.
+8. Limitations and outstanding verification.
+
+The structure may adapt to the type of query.
+
+### AGENT-009: Conversation Context
+
+Implement controlled conversational memory.
+
+The agent must distinguish:
+
+- Current conversation context.
+- User-provided case facts.
+- Retrieved legal knowledge.
+- Organization-specific information.
+
+Conversation memory must not be confused with verified legal sources.
+
+### AGENT-010: Human-in-the-Loop
+
+Support human review for:
+
+- Complex legal conclusions.
+- Low-confidence retrieval.
+- Conflicting legal sources.
+- Uncertain validity.
+- High-impact legal reports.
+
+The system must clearly indicate when human review is recommended.
+
+### AGENT-011: Auditability
+
+Record:
+
+- User query.
+- Organization identifier.
+- Agent execution identifier.
+- Execution plan.
+- Tools invoked.
+- Retrieved source identifiers.
+- Model and provider.
+- Prompt version.
+- Token usage.
+- Generated response.
+- Verification results.
+
+Audit logs must be protected against unauthorized modification.
+
+### AGENT-012: Execution Safety
+
+Implement:
+
+- Maximum tool execution count.
+- Maximum reasoning iterations.
+- Timeout limits.
+- Token limits.
+- Tool permission controls.
+- Input validation.
+- Prompt injection protection.
+- Source-content isolation.
+
+Retrieved documents must be treated as untrusted content, never as executable instructions.
+
+## 4.4 Response Reliability
+
+The agent must never assume that a fluent LLM response is legally correct.
+
+Required behavior:
+
+- Use repository evidence whenever available.
+- Disclose insufficient evidence.
+- Identify conflicting sources.
+- Avoid inventing legal references.
+- Distinguish legal facts from interpretations.
+- Identify uncertainty explicitly.
+
+## 4.5 Acceptance Criteria
+
+The Legal AI Agent is accepted when:
+
+1. It can interpret a natural-language legal question.
+2. It can generate an execution plan.
+3. It can invoke legal retrieval tools.
+4. It can use the RAG Engine.
+5. It can communicate with multiple LLM providers through the LLM Engine.
+6. It can produce structured legal analysis.
+7. It can verify citations against repository sources.
+8. It can identify insufficient or conflicting information.
+9. It can maintain conversation context without confusing it with legal evidence.
+10. Its execution can be audited and reproduced to the extent permitted by provider behavior.
+
+---
+
+# 5. INTEGRATED ARCHITECTURE
+
+The three components must work together through standardized interfaces.
+
+## 5.1 Data Flow
+
+User
+→ Derecho IA API
+→ Legal AI Agent
+→ Query Understanding
+→ Task Planning
+→ Tool Registry
+→ RAG Engine
+→ STAIR + Hybrid Retrieval
+→ Legal Context
+→ LLM Engine
+→ Selected LLM Provider
+→ Legal Analysis
+→ Citation Verification
+→ Structured Response
+→ User Interface
+
+## 5.2 Component Responsibilities
+
+| Component | Responsibility |
+|---|---|
+| RAG Engine | Find and prepare legal knowledge |
+| LLM Engine | Provide language-model capabilities |
+| Legal AI Agent | Orchestrate research and analysis |
+| STAIR | Retrieve hierarchical legal context |
+| PostgreSQL | Store legal data and metadata |
+| pgvector | Store and search embeddings |
+
+No component should duplicate another component's responsibilities.
+
+## 5.3 Proposed Project Structure
+
+```text
+derecho-ia/
+│
+├── app/
+│   ├── rag/
+│   │   ├── retrieval/
+│   │   ├── ranking/
+│   │   ├── context/
+│   │   ├── evaluation/
+│   │   └── api/
+│   │
+│   ├── llm/
+│   │   ├── providers/
+│   │   ├── gateway/
+│   │   ├── prompts/
+│   │   ├── usage/
+│   │   └── evaluation/
+│   │
+│   ├── agent/
+│   │   ├── orchestrator/
+│   │   ├── planning/
+│   │   ├── tools/
+│   │   ├── verification/
+│   │   ├── memory/
+│   │   └── policies/
+│   │
+│   ├── normative_repository/
+│   │
+│   └── api/
+│
+├── tests/
+│   ├── rag/
+│   ├── llm/
+│   ├── agent/
+│   └── integration/
+│
+├── evaluation/
+│   ├── retrieval/
+│   ├── legal_queries/
+│   └── model_benchmarks/
+│
+├── docs/
+│   ├── architecture/
+│   ├── rag/
+│   ├── llm/
+│   └── agent/
+│
+└── docker-compose.yml
+```
+
+This structure is a proposal and must be reconciled with the existing repository before implementation.
+
+---
+
+# 6. SECURITY AND MULTI-TENANCY
+
+All three components must be designed for future multi-company SaaS operation.
+
+Requirements:
+
+- Organization-level isolation.
+- User-level authorization.
+- Secure API access.
+- Encrypted provider credentials.
+- Tenant-aware query execution.
+- Usage and cost attribution.
+- Audit trails.
+- Configurable data retention.
+- No cross-organization retrieval without explicit authorization.
+
+The initial normative repository may be globally shared, while private company documents must remain logically isolated.
+
+---
+
+# 7. IMPLEMENTATION PHASES
+
+Implementation must be sequential.
+
+## Phase 1 – RAG Engine
+
+Deliverables:
+- Hybrid retrieval.
+- STAIR integration.
+- Context assembly.
+- Source traceability.
+- Retrieval evaluation.
+
+Exit condition: reliable legal context retrieval.
+
+## Phase 2 – LLM Engine
+
+Deliverables:
+- Provider abstraction.
+- OpenAI integration.
+- Second provider integration.
+- Ollama compatibility.
+- BYOK architecture.
+- Token and cost tracking.
+- Prompt management.
+
+Exit condition: multiple providers accessible through one standardized interface.
+
+## Phase 3 – Legal AI Agent
+
+Deliverables:
+- Query understanding.
+- Task planning.
+- Tool registry.
+- Tool execution.
+- Legal analysis.
+- Citation verification.
+- Conversation context.
+- Audit logging.
+
+Exit condition: an operational legal research agent capable of answering questions using the normative repository.
+
+## Phase 4 – Integrated Validation
+
+Deliverables:
+- End-to-end tests.
+- Legal evaluation dataset.
+- Retrieval benchmarks.
+- Citation accuracy tests.
+- Provider comparison.
+- Security tests.
+- Performance tests.
+
+Exit condition: validated MVP ready for integration into the Derecho IA platform.
+
+---
+
+# 8. OUT OF SCOPE
+
+The following capabilities are not required for this implementation:
+
+- Full SaaS frontend.
+- Billing and subscription management.
+- Autonomous legal representation.
+- Autonomous submission of legal documents.
+- Automatic legal advice without source verification.
+- Fully autonomous multi-agent workflows.
+- Automatic ingestion of all external legal websites.
+
+These may be introduced in subsequent product releases.
+
+---
+
+# 9. FINAL PRODUCT OBJECTIVE
+
+The final objective is to deliver an intelligent legal research and analysis engine capable of:
+
+1. Understanding legal questions.
+2. Retrieving relevant Peruvian legislation and jurisprudence.
+3. Understanding hierarchical and historical legal relationships.
+4. Analyzing legal information through configurable LLM providers.
+5. Producing structured, traceable and verifiable responses.
+6. Identifying uncertainty and conflicting legal information.
+7. Supporting future specialized legal agents.
+
+**Core architectural principle:**
+
+The legal repository is the source of knowledge, RAG is the retrieval mechanism, the LLM is the reasoning and language-generation engine, and the Legal AI Agent coordinates the complete process.
+
+Derecho IA must remain independent of any specific AI provider and must preserve complete traceability between generated legal conclusions and their supporting sources.

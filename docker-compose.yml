@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: derecho-ia-postgres
+    environment:
+      POSTGRES_DB: derecho_ia
+      POSTGRES_USER: derecho_ia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the local .env file}
+    volumes:
+      - derecho_ia_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U derecho_ia -d derecho_ia"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  derecho-ia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: derecho-ia-normativa
+
+    environment:
+      DATA_DIR: /app/data
+      SOURCE_DIR: /app/data/incoming_originals
+      OCR_ENABLED: "true"
+      OCR_LANGUAGE: spa
+      PILOT_SIZE: "10"
+      LLM_ENDPOINT: "http://host.docker.internal:11434/v1"
+      LLM_PRIMARY_MODEL: "qwen2.5:14b"
+      LLM_SECONDARY_MODEL: "qwen2.5:7b"
+      LLM_CAPABILITIES: "text_generation,structured_output"
+      LLM_TASK_ROUTES: '{"summarization":"secondary","classification":"secondary"}'
+      LLM_FALLBACK_ROUTES: '{"primary":"secondary"}'
+      PGVECTOR_DSN: postgresql://derecho_ia:${POSTGRES_PASSWORD}@postgres:5432/derecho_ia
+      STAIR_TABLE: legal_hierarchy_chunks
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    volumes:
+      - ./data:/app/data
+
+    working_dir: /app
+
+    entrypoint: ["tail", "-f", "/dev/null"]
+    tty: true
+
+volumes:
+  derecho_ia_postgres:

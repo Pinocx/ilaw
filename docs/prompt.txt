@@ -1,0 +1,310 @@
+# Task: Bulk Legal Knowledge Repository Preparation
+
+## Project
+
+Repository: `derecho-ia-normativa-pe`
+
+Objective: Prepare an existing collection of approximately 328 manually downloaded legal documents and books for automated conversion, structuring and future STAIR/RAG indexing.
+
+Execution environment: Docker.
+
+## 1. First priority: inspect the collection
+
+The user has already downloaded approximately 328 documents and books.
+
+Do not assume that all documents are PDFs or that all documents are legislation.
+
+Inspect the existing repository and identify the actual directory containing the collection.
+
+If the collection directory has not been configured, ask the user for its location before moving or processing files.
+
+Do not modify, rename or delete original files.
+
+## 2. Build a document inventory
+
+Implement a command that recursively scans the configured source directory.
+
+For each file, register:
+
+- Original filename.
+- Relative path.
+- File extension.
+- MIME type.
+- File size.
+- SHA-256 checksum.
+- PDF page count, when applicable.
+- PDF metadata, when available.
+- Whether text extraction appears possible.
+- Whether OCR is likely required.
+- Duplicate status.
+- Initial classification status.
+- Processing status.
+
+Support PDF initially and identify other formats for future processing.
+
+Do not silently ignore unsupported files.
+
+Generate:
+
+`data/reports/document-inventory.csv`
+
+`data/reports/document-inventory.json`
+
+`data/reports/inventory-summary.md`
+
+The inventory must be reproducible and idempotent.
+
+## 3. Document classification
+
+Implement a preliminary classification mechanism.
+
+Possible categories:
+
+- `legislation`
+- `jurisprudence`
+- `administrative_regulation`
+- `legal_doctrine`
+- `legal_manual`
+- `complementary_material`
+- `unknown`
+
+Use filenames, available PDF metadata and cautiously extracted text to propose classifications.
+
+Classification must be marked as preliminary.
+
+Do not automatically classify a document as legislation solely because its filename contains the word "ley", "código" or "decreto".
+
+Allow manual correction through a metadata file or equivalent mechanism.
+
+Preserve classification confidence and classification method.
+
+## 4. Metadata registry
+
+Create a persistent registry for all documents.
+
+Track:
+
+- Stable internal document ID.
+- Original filename and path.
+- SHA-256.
+- Document category.
+- Title.
+- Author or issuing authority, when available.
+- Publication date, when available.
+- Edition or version, when available.
+- Source and source URL, if supplied.
+- Copyright or reuse status, when known.
+- Classification status.
+- Extraction status.
+- Validation status.
+- Processing history.
+
+Do not invent missing metadata.
+
+Use explicit `unknown` or `pending` values.
+
+## 5. Processing strategy
+
+Do not immediately process all 328 documents.
+
+First generate the inventory and classification proposals.
+
+Then prepare a representative pilot batch of approximately 10 documents, covering different document types and PDF characteristics.
+
+The pilot must include, if available:
+
+- A legal code.
+- An individual law or regulation.
+- A judicial decision.
+- A legal doctrine book.
+- A scanned PDF.
+- A text-based PDF.
+- A long document.
+- A document with tables or complex formatting.
+
+If some types are not present, report that fact rather than inventing test material from the collection.
+
+## 6. Processing pipeline integration
+
+Integrate the inventory with the previously specified PDF-to-Markdown pipeline.
+
+Reuse existing modules and models.
+
+Avoid implementing duplicate extraction, OCR, registry or validation logic.
+
+Support:
+
+- PDF text extraction.
+- OCR.
+- Markdown conversion.
+- Page-level provenance.
+- Document metadata.
+- Structured legal units.
+- Quality validation.
+- Processing reports.
+
+Implement separate processing profiles for:
+
+1. Legislation.
+2. Jurisprudence.
+3. Legal doctrine and books.
+4. Administrative regulations.
+5. Complementary material.
+
+Do not force every document into an article-based structure.
+
+For legal doctrine, preserve book, chapter, section and page hierarchy.
+
+For jurisprudence, preserve court, case identifier, date, procedural context, reasoning and decision when identifiable.
+
+## 7. Index preparation
+
+Generate a backend-independent indexing dataset.
+
+Each record must preserve:
+
+- Document ID.
+- Document category.
+- Document version.
+- Unit ID.
+- Unit type.
+- Parent unit ID.
+- Hierarchy.
+- Text.
+- Source filename.
+- SHA-256.
+- Source page references.
+- Verification status.
+- Reuse status.
+
+Generate JSONL output suitable for future indexing.
+
+Implement:
+
+- Document-level records.
+- Hierarchical units.
+- Retrieval chunks.
+- Parent-child relationships.
+- Neighboring-unit references when reliable.
+
+For legislation, use the article as the primary retrieval unit.
+
+For long articles, create child chunks retaining the original article ID.
+
+For books, use section-based chunks retaining chapter and page references.
+
+For jurisprudence, preserve document and section context.
+
+Do not generate embeddings or connect to a vector database yet.
+
+## 8. Quality and review
+
+Create quality reports identifying:
+
+- Duplicate files.
+- Unsupported formats.
+- Failed extraction.
+- OCR-required documents.
+- Low-quality OCR.
+- Missing metadata.
+- Uncertain classification.
+- Missing page references.
+- Empty or suspicious Markdown.
+- Structural parsing failures.
+
+Never mark a document as legally verified merely because technical processing succeeded.
+
+Create a review workflow for uncertain records.
+
+## 9. Batch processing
+
+After the pilot has been validated, support configurable batch processing.
+
+Default batch size: 25 documents.
+
+Requirements:
+
+- Resume after interruption.
+- Isolate individual failures.
+- Avoid duplicate processing.
+- Allow explicit reprocessing.
+- Preserve previous processing records.
+- Report progress and estimated remaining workload where possible.
+
+Do not process all 328 documents automatically until the pilot has been reviewed and approved by the user.
+
+## 10. Commands
+
+Implement commands equivalent to:
+
+```bash
+# Inventory all source documents
+python -m normative_repository inventory
+
+# Export inventory
+python -m normative_repository inventory --export
+
+# Show classification proposals
+python -m normative_repository classify --report
+
+# Process selected pilot documents
+python -m normative_repository process --pilot
+
+# Validate pilot outputs
+python -m normative_repository validate
+
+# Prepare indexing dataset
+python -m normative_repository prepare-index
+
+# Process a batch after approval
+python -m normative_repository process --batch-size 25
+
+# Display status
+python -m normative_repository status
+```
+
+Adapt the command interface to the existing CLI architecture.
+
+Document all actual commands.
+
+## 11. Important restrictions
+
+- Do not scrape or download external content.
+- Do not modify original files.
+- Do not automatically determine legal validity.
+- Do not automatically consolidate amendments.
+- Do not invent missing metadata.
+- Do not generate embeddings yet.
+- Do not connect to external AI APIs.
+- Do not assume every document is public domain.
+- Do not redistribute source documents.
+- Do not process the entire collection before the pilot is reviewed.
+
+## 12. Deliverables
+
+Provide:
+
+1. Inventory of all available documents.
+2. Classification report.
+3. Duplicate report.
+4. Pilot processing results.
+5. Generated Markdown examples.
+6. Structured JSON examples.
+7. Indexing JSONL examples.
+8. Quality-control report.
+9. Docker commands.
+10. Documentation.
+11. Updated backlog.
+12. Final report with unresolved issues.
+
+## 13. Execution sequence
+
+First inspect the repository and source directory.
+
+If the source directory is not known, ask the user for its path.
+
+Then implement inventory and classification.
+
+Do not start bulk conversion until the inventory and pilot have been reviewed.
+
+Prioritize provenance, legal-document integrity and recoverability over processing speed.
